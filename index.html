@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="theme-color" content="#07061a" />
+  <title>Handverse — a 3D room you play with your hands</title>
+  <meta name="description" content="A 3D room and 10 mini-games controlled by your hands through the webcam: cricket, football, air painting, ghost hunt, shooting, endless runner, chess, carrom, bowling and pop the balls." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <!-- camera preview -->
+  <div id="pip" class="pip hidden"><video id="video" playsinline muted></video><canvas id="pipCanvas"></canvas></div>
+
+  <!-- hand cursor -->
+  <div id="cursor" class="cursor hidden">
+    <svg viewBox="0 0 60 60"><circle class="trk" cx="30" cy="30" r="24" /><circle id="cursorProg" class="prog" cx="30" cy="30" r="24" /></svg>
+    <i></i>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hud hidden">
+    <div class="hud-l">
+      <button id="btnBack" class="chip-btn hidden" data-hand="pinch">⟵ Room</button>
+      <div id="hudTitle" class="hud-title"></div>
+    </div>
+    <div id="hudStats" class="hud-stats"></div>
+    <div class="hud-r">
+      <div id="gestureChip" class="gesture-chip" title="Detected gesture">·</div>
+      <button id="btnSound" class="chip-btn icon" data-hand="pinch" title="Sound">🔊</button>
+      <button id="btnPip" class="chip-btn icon" data-hand="pinch" title="Camera preview">📷</button>
+      <button id="btnMenu" class="chip-btn" data-hand="dwell">🎮 Games</button>
+    </div>
+  </div>
+  <div id="tools" class="tools hidden"></div>
+  <div id="help" class="help hidden"></div>
+  <div id="joy" class="joy hidden"><i></i></div>
+  <div id="toast" class="toast"></div>
+  <div id="banner" class="banner"></div>
+  <div id="flash" class="flash"></div>
+
+  <!-- start screen -->
+  <div id="intro" class="screen intro">
+    <div class="orbs" aria-hidden="true"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+    <div class="intro-card">
+      <div class="badge">WEBCAM · HAND TRACKING · 3D</div>
+      <h1>HAND<span>VERSE</span></h1>
+      <p class="tag">Step into a 3D room you control with your bare hands. Walk around, grab and throw things, and jump into 10 games.</p>
+      <div id="introGames" class="game-strip"></div>
+      <div class="gestures">
+        <div><em>☝️</em><b>Point</b><small>aim</small></div>
+        <div><em>🤏</em><b>Pinch</b><small>grab · click · shoot</small></div>
+        <div><em>✋</em><b>Open palm</b><small>walk &amp; turn</small></div>
+        <div><em>✊</em><b>Fist</b><small>special move</small></div>
+      </div>
+      <div class="row">
+        <button id="startCam" class="btn">▶ Start with camera</button>
+        <button id="startMouse" class="btn ghost">Play with mouse</button>
+      </div>
+      <ul id="bootList" class="boot hidden">
+        <li id="bootCam"><i></i>Camera</li>
+        <li id="bootModel"><i></i>Hand-tracking AI</li>
+        <li id="bootHand"><i></i>Show your hand</li>
+      </ul>
+      <p id="bootHint" class="small">Video never leaves your device. Best in good light, about an arm's length from the screen.</p>
+      <p id="err" class="err"></p>
+    </div>
+  </div>
+
+  <!-- how-to card -->
+  <div id="howto" class="screen modal hidden">
+    <div class="card">
+      <div id="htEmoji" class="ht-emoji"></div>
+      <h2 id="htTitle"></h2>
+      <p id="htDesc" class="ht-desc"></p>
+      <ul id="htList" class="ht-list"></ul>
+      <div id="htBest" class="ht-best"></div>
+      <div class="row">
+        <button id="htStart" class="btn" data-hand="dwell">▶ Start</button>
+        <button id="htBack" class="btn ghost" data-hand="dwell">Back to room</button>
+      </div>
+      <p class="small">Point at a button and pinch, or hold your finger on it.</p>
+    </div>
+  </div>
+
+  <!-- game over -->
+  <div id="over" class="screen modal hidden">
+    <div class="card">
+      <h2 id="ovTitle">Game over</h2>
+      <div id="ovSub" class="ov-sub"></div>
+      <div class="ov-score"><small id="ovLabel">SCORE</small><b id="ovScore">0</b></div>
+      <div id="ovBest" class="ov-best"></div>
+      <div id="ovStats" class="ov-stats"></div>
+      <div class="row">
+        <button id="ovAgain" class="btn" data-hand="dwell">↻ Play again</button>
+        <button id="ovRoom" class="btn ghost" data-hand="dwell">Back to room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- game menu -->
+  <div id="menu" class="screen modal hidden">
+    <div class="card wide">
+      <h2>Pick a game</h2>
+      <div id="menuGrid" class="menu-grid"></div>
+      <div class="row">
+        <button id="menuQuality" class="btn ghost small-btn" data-hand="dwell">Graphics: High</button>
+        <button id="menuClose" class="btn ghost small-btn" data-hand="dwell">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
